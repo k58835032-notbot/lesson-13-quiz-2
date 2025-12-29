@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Romaji → Hiragana Quiz (Long Vowels)</title>
+
+<style>
+  body {
+    font-family: "Hiragino Kaku Gothic Pro", "Meiryo", sans-serif;
+    background:#fff;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:40px;
+    text-align:center;
+    color:#333;
+  }
+  h1 { color:#b23b3b; margin-bottom:10px; }
+  #counter { margin-bottom:20px; font-size:1.1em; }
+
+  #game-box {
+    background:#fff;
+    border-radius:15px;
+    box-shadow:0 4px 12px rgba(0,0,0,.15);
+    padding:30px;
+    width:90%;
+    max-width:500px;
+  }
+
+  #romaji { font-size:2.4em; margin:20px 0; letter-spacing:1px; }
+
+  .option {
+    display:block;
+    background:#ffeaea;
+    border:none;
+    border-radius:10px;
+    padding:12px;
+    font-size:1.3em;
+    width:100%;
+    max-width:260px;
+    margin:10px auto;
+    cursor:pointer;
+  }
+
+  .option:hover { background:#f7b6b6; }
+
+  #message { margin-top:20px; font-weight:bold; font-size:1.2em; }
+
+
+
+  #next {
+    display:none;
+    margin-top:20px;
+    background:#b23b3b;
+    color:white;
+    border:none;
+    border-radius:10px;
+    padding:10px 20px;
+    font-size:1.1em;
+    cursor:pointer;
+  }
+
+  #gif-box { margin-top:20px; }
+  #gif-box img { max-width:220px; border-radius:12px; }
+</style>
+</head>
+
+<body>
+
+<h1>Pronunciation ↔ Hiragana</h1>
+<div id="counter"></div>
+
+<div id="game-box">
+  <div id="romaji"></div>
+  <div id="options"></div>
+  <div id="message"></div>
+  <div id="motivation"></div>
+  <div id="gif-box"></div>
+  <button id="next" onclick="nextQuestion()">Next</button>
+</div>
+
+
+<script>
+/* ========= QUESTION POOL (50) ========= */
+const ALL_QUESTIONS = [
+   { romaji:"hīki", kana:"ひいき", distractors:["ひき","ひっき","ひきい"] },
+
+  { romaji:"chīsai", kana:"ちいさい", distractors:["ちかい","ちさい","ちいかい"] },
+
+  { romaji:"yasashī", kana:"やさしい", distractors:["やさし","やさしいい","やさしー"] },
+
+  { romaji:"yasui", kana:"やすい", distractors:["やすうい","やっすい","やす"] },
+
+  { romaji:"nioi", kana:"におい", distractors:["にお","におおい","におっい"] },
+
+  { romaji:"okāsan", kana:"おかあさん", distractors:["おかさん","おかあさ","おかあさー"] },
+
+  { romaji:"okusan", kana:"おくさん", distractors:["おくさ","おくさー","おくさあ"] },
+  
+  { romaji:"kasan", kana:"かさん", distractors:["かあさん","かさあん","かざん"] },
+
+  { romaji:"obasan", kana:"おばさん", distractors:["おばさ","おばさー","おばあさ"] },
+
+  { romaji:"obāsan", kana:"おばあさん", distractors:["おばさん","おばあさ","おばあさー"] },
+
+  { romaji:"yasai", kana:"やさい", distractors:["やさあい","やっさい","やさ"] },
+
+  { romaji:"chīki", kana:"ちいき", distractors:["ちき","ちっき","ちきい"] },
+
+  { romaji:"chikai", kana:"ちかい", distractors:["ちかあい","ちかっい","ちか"] },
+
+  { romaji:"chisai", kana:"ちさい", distractors:["ちさあい","ちっさい","ちさ"] },
+
+  { romaji:"chī", kana:"ちい", distractors:["ち","ちっ","ちいい"] },
+
+  { romaji:"chishiki", kana:"ちしき", distractors:["ちしいき","ちしっき","ちしきい"] },
+
+  { romaji:"hikitsuzuku", kana:"ひきつづく", distractors:["ひきつく","ひいきつつく","ひきいつづく"] },
+
+  { romaji:"bīshiki", kana:"びいしき", distractors:["びしき","びっしき","びしきい"] },
+
+  { romaji:"onīsan", kana:"おにいさん", distractors:["おにさん","おにいさ","おにいさー"] },
+
+  { romaji:"onisan", kana:"おにさん", distractors:["おにさ","おにっさ","おにさー"] },
+
+  { romaji:"kite kudasai", kana:"きてください", distractors:["きてくださ","きてくださーい","きてくださあい"] },
+
+  { romaji:"kīte kudasai", kana:"きいてください", distractors:["きいてくださ","きいてくださーい","きいてくださあい"] },
+
+  { romaji:"mīdasu", kana:"みいだす", distractors:["みだす","みっだす","みだあす"] },
+
+  { romaji:"midasu", kana:"みだす", distractors:["みいだす","みだっす","みだあす"] },
+
+  { romaji:"mitasu", kana:"みたす", distractors:["みたっす","みたあす","みいたす"] },
+
+  { romaji:"ojīsan", kana:"おじいさん", distractors:["おじさん","おじいさ","おじいさー"] },
+
+  { romaji:"ojisan", kana:"おじさん", distractors:["おじいさん","おじっさん","おじさー"] },
+
+  { romaji:"akka", kana:"あっか", distractors:["ああか","あかあ","あっかあ"] },
+  
+  { romaji:"yūmei", kana:"ゆうめい", distractors:["ゆめい","やうめい","やおめい"] },
+
+  { romaji:"kūki", kana:"くうき", distractors:["くき","くっき","くきい"] },
+  
+  { romaji:"sēkaku", kana:"せいかく", distractors:["せかく","せっかく","けいかく"] },
+
+  { romaji:"yūmē", kana:"ゆうめい", distractors:["ゆめい","ゆっめい","ゆめえ"] },
+ { romaji:"ai", kana:"あい", distractors:["あえ","あう","あお"] },
+  { romaji:"ao", kana:"あお", distractors:["あおい","あおう","あか"] },
+  { romaji:"ashi", kana:"あし", distractors:["あせ","あす","あしー"] },
+  { romaji:"ase", kana:"あせ", distractors:["あし","あさ","あせー"] },
+  { romaji:"atsukau", kana:"あつかう", distractors:["あつい","あつか","あつこう"] },
+  { romaji:"atsui", kana:"あつい", distractors:["あつかう","あつえ","あつき"] },
+  { romaji:"aku", kana:"あく", distractors:["あぐ","あけ","あこ"] },
+  { romaji:"aiko", kana:"あいこ", distractors:["あいご","あいく","あいき"] },
+  { romaji:"aki", kana:"あき", distractors:["あきー","あけ","あきん"] },
+  { romaji:"akogi", kana:"あこぎ", distractors:["あこき","あこぎー","あこぎん"] },
+
+  { romaji:"age", kana:"あげ", distractors:["あご","あけ","あえ"] },
+  { romaji:"ishi", kana:"いし", distractors:["いじ","いす","いしー"] },
+  { romaji:"isu", kana:"いす", distractors:["いし","いず","いすー"] },
+  { romaji:"ike", kana:"いけ", distractors:["いけー","いこ","いけん"] },
+  { romaji:"inochi", kana:"いのち", distractors:["いのき","いのし","いのに"] },
+  { romaji:"ishiki", kana:"いしき", distractors:["いしぎ","いしきー","いしけ"] },
+  { romaji:"ii", kana:"いい", distractors:["いえ","いき","いし"] },
+  
+  { romaji:"iku", kana:"いく", distractors:["いぐ","いけ","いこ"] },
+  { romaji:"iken", kana:"いけん", distractors:["いけんー","いけ","いこ"] },
+  { romaji:"uta", kana:"うた", distractors:["うち","うだ","うつ"] },
+{ romaji:"nana", kana:"なな", distractors:["なっな","ななあ","なた"] },
+  { romaji:"onaka", kana:"おなか", distractors:["おがか","おなが","おなかあ"] },
+  { romaji:"naka", kana:"なか", distractors:["なが","なかあ","なっか"] },
+  { romaji:"nani", kana:"なに", distractors:["なにい","なぎ","なにゃ"] },
+  { romaji:"nan", kana:"なん", distractors:["なっん","なんん","なんあ"] },
+  { romaji:"nanika", kana:"なにか", distractors:["なにが","なっにか","なにかあ"] },
+  { romaji:"nanka", kana:"なんか", distractors:["なんが","なっか","なんかあ"] },
+  { romaji:"naku", kana:"なく", distractors:["なぐ","なっく","なくう"] },
+  { romaji:"naze", kana:"なぜ", distractors:["なげ","なっぜ","なず"] },
+  { romaji:"ninau", kana:"になう", distractors:["にがう","みなう","になうう"] },
+  { romaji:"nikki", kana:"にっき", distractors:["にき","にっぎ","にっきい"] },
+  { romaji:"ninki", kana:"にんき", distractors:["にっき","にんぎ","なんき"] },
+  { romaji:"ani", kana:"あに", distractors:["あぎ","あにい","あっに"] },
+  { romaji:"oni", kana:"おに", distractors:["おぎ","おにい","おっに"] },
+  { romaji:"kuni", kana:"くに", distractors:["ぐに","くぎ","くね"] },
+  { romaji:"san", kana:"さん", distractors:["さあん","ざん","さんん"] },
+  { romaji:"sakana", kana:"さかな", distractors:["さがな","ざかな","さっかな"] },
+  { romaji:"sannin", kana:"さんにん", distractors:["さにん","さっにん","さんねん"] },
+  { romaji:"inu", kana:"いぬ", distractors:["いぐ","いっぬ","いぬう"] },
+  { romaji:"neko", kana:"ねこ", distractors:["ねご","ねっこ","ぬこ"] },
+  { romaji:"nokosu", kana:"のこす", distractors:["のごす","のっこす","のこず"] },
+  { romaji:"kinoko", kana:"きのこ", distractors:["ぎのこ","きっのこ","きのご"] },
+  { romaji:"denki", kana:"でんき", distractors:["でぬき","でっき","でんぎ"] },
+  { romaji:"tenki", kana:"てんき", distractors:["てっき","てんぎ","てにき"] },
+  { romaji:"anshin", kana:"あんしん", distractors:["あんじん","あっしん","あしん"] },
+  { romaji:"tanoshii", kana:"たのしい", distractors:["たのしー","たっのしい","たのじい"] },
+  { romaji:"negai", kana:"ねがい", distractors:["ねかい","ねがあい","ねっがい"] },
+  { romaji:"jinsei", kana:"じんせい", distractors:["じんせー","じんせいい","じっせい"] },
+  { romaji:"nagai", kana:"ながい", distractors:["なかい","ながあい","なっがい"] },
+  { romaji:"sakka", kana:"さっか", distractors:["さか","ざっか","さっが"] },
+  { romaji:"saka", kana:"さか", distractors:["さっか","ざか","さかあ"] },
+  { romaji:"sanka", kana:"さんか", distractors:["さっか","ざんか","さんが"] },
+  { romaji:"gakki", kana:"がっき", distractors:["がき","がっぎ","かっき"] },
+  { romaji:"kakkoku", kana:"かっこく", distractors:["がっこく","かんこく","かぐこく"] },
+  { romaji:"kitte kudasai", kana:"きってください", distractors:["きてください","きっでください","きってくだい"] },
+  { romaji:"katta", kana:"かった", distractors:["かた","がった","かったあ"] },
+  { romaji:"gaki", kana:"がき", distractors:["がぎ","がっき","かき"] },
+  { romaji:"kakoku", kana:"かこく", distractors:["がこく","かっこく","かこぐ"] },
+  { romaji:"kite kudasai", kana:"きてください", distractors:["きってください","きでください","きてくだい"] },
+  { romaji:"kata", kana:"かた", distractors:["がた","かだ","かった"] },
+  { romaji:"iku", kana:"いく", distractors:["いっく","いぐ","いくう"] },
+  { romaji:"ku", kana:"く", distractors:["ぐ","くう","っく"] },
+  { romaji:"zokugo", kana:"ぞくご", distractors:["ぞぐご","ぞっご","そくご"] },
+  { romaji:"sushi", kana:"すし", distractors:["ずし","すじ","すっし"] },
+  { romaji:"okashi", kana:"おかし", distractors:["おがし","おかじ","おっかし"] },
+  { romaji:"okashii", kana:"おかしい", distractors:["おかしー","おっかしい","おがしい"] },
+  { romaji:"ashi", kana:"あし", distractors:["あじ","あち","あっし"] },
+  { romaji:"oishii", kana:"おいしい", distractors:["おいしー","おっいしい","おいじい"] },
+  { romaji:"kasa", kana:"かさ", distractors:["がさ","かっさ","かざ"] },
+  { romaji:"esa", kana:"えさ", distractors:["えざ","えっさ","えさあ"] },
+  { romaji:"kazoku", kana:"かぞく", distractors:["かそく","かっぞく","かぞっく"] },
+  { romaji:"kaze", kana:"かぜ", distractors:["かで","がぜ","かっぜ"] },
+  { romaji:"kaji", kana:"かじ", distractors:["がじ","かぢ","かっじ"] },
+  { romaji:"kazu", kana:"かず", distractors:["がず","かっず","かす"] },
+  { romaji:"goji", kana:"ごじ", distractors:["こじ","ごぢ","ごっじ"] },
+  { romaji:"aji", kana:"あじ", distractors:["あし","あぢ","あっじ"] },
+  { romaji:"sekai", kana:"せかい", distractors:["せがい","せかあい","せっかい"] },
+  { romaji:"isu", kana:"いす", distractors:["いず","いっす","いすう"] },
+  { romaji:"osu", kana:"おす", distractors:["おず","おっす","おすう"] },
+  { romaji:"ai", kana:"あい", distractors:["あぃ","あいー","あぎ"] },
+  { romaji:"ie", kana:"いえ", distractors:["いぇ","いへ","いぃえ"] },
+  { romaji:"ue", kana:"うえ", distractors:["うぇ","うへ","うええ"] },
+  { romaji:"aoi", kana:"あおい", distractors:["あおーい","あおぃ","あおっい"] },
+  { romaji:"au", kana:"あう", distractors:["あぅ","あうう","あっう"] },
+  { romaji:"ekaku", kana:"えかく", distractors:["えがく","えっかく","えかぐ"] },
+  { romaji:"kaigi", kana:"かいぎ", distractors:["かいき","がいぎ","かいぎい"] },
+  { romaji:"kiku", kana:"きく", distractors:["ぎく","きっく","きくう"] },
+  { romaji:"ikaga", kana:"いかが", distractors:["いかか","いかぎ","いっかが"] },
+  { romaji:"kagi", kana:"かぎ", distractors:["かぎい","かぎー","がぎ"] },
+  { romaji:"gikai", kana:"ぎかい", distractors:["きかい","ぎがい","ぎかあい"] },
+  { romaji:"goi", kana:"ごい", distractors:["こい","ごぃ","ごいー"] },
+  { romaji:"gogaku", kana:"ごがく", distractors:["こがく","ごがっく","ごかく"] },
+  { romaji:"igai", kana:"いがい", distractors:["いかい","いがあい","いっがい"] },
+  { romaji:"ugoki", kana:"うごき", distractors:["うこき","うごぎ","うっごき"] },
+  { romaji:"gogo", kana:"ごご", distractors:["こご","ごっご","ごごー"] },
+  { romaji:"egao", kana:"えがお", distractors:["えがを","えかお","えがおう"] },
+  { romaji:"eiga", kana:"えいが", distractors:["えいか","えいがあ","えっいが"] },
+  { romaji:"eigo", kana:"えいご", distractors:["えいこ","えいごう","えっいご"] },
+  { romaji:"eki", kana:"えき", distractors:["えぎ","えっき","えきい"] },
+  { romaji:"kagaku", kana:"かがく", distractors:["かかく","ががく","かがっく"] },
+  { romaji:"kega", kana:"けが", distractors:["けか","げが","けっが"] },
+  { romaji:"i", kana:"い", distractors:["ぃ","いー","いぃい"] },
+  { romaji:"o", kana:"お", distractors:["ぉ","おー","おお"] },
+  { romaji:"ii", kana:"いい", distractors:["いーい","いぃい","いっい"] },
+  { romaji:"utau", kana:"うたう", distractors:["うたー","うたい","うつう"] },
+  { romaji:"uso", kana:"うそ", distractors:["うし","うそー","うぞ"] },
+  { romaji:"ude", kana:"うで", distractors:["うでー","うど","うでえ"] },
+   { romaji:"konnan", kana:"こんなん", distractors:["こっなん","こなん","こーなん"] },
+  { romaji:"bonsai", kana:"ぼんさい", distractors:["ぼぬさい","ぼなさい","ぼっさい"] },
+  { romaji:"denki", kana:"でんき", distractors:["でんし","でっき","でぬき"] },
+  { romaji:"konzatsu", kana:"こんざつ", distractors:["ごんざつ","こっさつ","こぬさつ"] },
+  { romaji:"kankoku", kana:"かんこく", distractors:["かっこく","がっこく","かぐこく"] },
+  { romaji:"unten", kana:"うんてん", distractors:["うんでん","こってん","こんてん"] },
+  { romaji:"sannen", kana:"さんねん", distractors:["さねん","さっねん","さね"] },
+  { romaji:"kondo", kana:"こんど", distractors:["こんと","こっど","こぬど"] },
+  { romaji:"sensei", kana:"せんせい", distractors:["せんさい","せいせい","せっせい"] },
+  { romaji:"genki", kana:"げんき", distractors:["げんぎ","げっき","けっき"] },
+  { romaji:"sentaku", kana:"せんたく", distractors:["せったく","せんたけ","せんだく"] },
+  { romaji:"okane", kana:"おかね", distractors:["おかん","おがん","おがね"] },
+  { romaji:"zasshi", kana:"ざっし", distractors:["ざんし","さんし","なんし"] },
+  { romaji:"shinsetsu_na", kana:"しんせつな", distractors:["しっせつな","しっせいだ","しんせいた"] },
+  { romaji:"ichi_en", kana:"いちえん", distractors:["いちねん","いせん","いしえん"] },
+  { romaji:"seigen", kana:"せいげん", distractors:["せんけい","せんげい","せいけん"] },
+  { romaji:"kokusai", kana:"こくさい", distractors:["こくさん","ごくさい","ごくさん"] },
+  { romaji:"sonna_koto", kana:"そんなこと", distractors:["そっなこと","こっなこと","こんなこて"] },
+  { romaji:"sanka", kana:"さんか", distractors:["さっか","きっか","きんか"] },
+  { romaji:"shinken", kana:"しんけん", distractors:["しんけい","しっけん","しっけい"] },
+
+  // added words
+  { romaji:"tenki", kana:"てんき", distractors:["てんぎ","でんき","てんっき"] },
+  { romaji:"anshin", kana:"あんしん", distractors:["あんせん","あっしん","あんせい"] },
+  { romaji:"tanoshii", kana:"たのしい", distractors:["たのしー","たっのしい","たのじい"] },
+  { romaji:"negai", kana:"ねがい", distractors:["ねがえ","ねが","ねがう"] },
+  { romaji:"jinsei", kana:"じんせい", distractors:["じんせ","じっせい","じんせん"] },
+  { romaji:"nagai", kana:"ながい", distractors:["ながえ","なかい","なが"] },
+  { romaji:"saka", kana:"さか", distractors:["さっか","さが","さけ"] },
+  { romaji:"gakki", kana:"がっき", distractors:["がき","かっき","がっぎ"] },
+  { romaji:"sakka", kana:"さっか", distractors:["さんか","さか","さっかー"] },
+  { romaji:"gaki", kana:"がき", distractors:["がっき","かき","がぎ"] },
+  { romaji:"kagi", kana:"かぎ", distractors:["かぎい","がぎ","かっぎ"] },
+  { romaji:"kakoku", kana:"かこく", distractors:["かっこく","がこく","かこっく"] },
+  { romaji:"kakkoku", kana:"かっこく", distractors:["かっおく","かこき","がっこき"] },
+  { romaji:"kitte_kudasai", kana:"きってください", distractors:["きてください","きいってください","きっでください"] },
+  { romaji:"kiite_kudasai", kana:"きいてください", distractors:["きってください","きてください","きぃてください"] },
+  { romaji:"iku", kana:"いく", distractors:["いっく","いくう","いぐ"] },
+  { romaji:"itte", kana:"いって", distractors:["いっく","いった","いた"] },
+  { romaji:"ita", kana:"いた", distractors:["いだ","いった","いっだ"] },
+  { romaji:"itta", kana:"いった", distractors:["いた","いっだ","いった"] },
+  { romaji:"kata", kana:"かた", distractors:["かった","かたっ","がた"] },
+  { romaji:"katta", kana:"かった", distractors:["かた","かっだ","かったー"] },
+  { romaji:"kaita", kana:"かいた", distractors:["かいだ","かいだー","かった"] },
+  { romaji:"sannin", kana:"さんにん", distractors:["さんねん","さっにん","さねん"] },
+  { romaji:"ugoku", kana:"うごく", distractors:["うごー","うごき","うごけ"] },
+  { romaji:"eki", kana:"えき", distractors:["えぎ","えきー","えきん"] },
+  { romaji:"genki", kana:"げんき", distractors:["げんぎ","げっき","けっき"] },
+  { romaji:"enogu", kana:"えのぐ", distractors:["えのぐー","えのぎ","えのご"] },
+   { romaji:"aoi", kana:"あおい", distractors:["おあい","あおけ","おあけ"] },
+  { romaji:"kega", kana:"けが", distractors:["いが","いか","けか"] },
+  { romaji:"eki", kana:"えき", distractors:["いき","いぎ","えぎ"] },
+  { romaji:"isu", kana:"いす", distractors:["けす","せす","えす"] },
+  { romaji:"kiku", kana:"きく", distractors:["さく","さぐ","きぐ"] },
+  { romaji:"aji", kana:"あじ", distractors:["あし","おじ","おし"] },
+  { romaji:"ai", kana:"あい", distractors:["おい","おけ","あけ"] },
+  { romaji:"ookii", kana:"おおきい", distractors:["あおきい","おおけい","おきい"] },
+  { romaji:"akai", kana:"あかい", distractors:["おかい","あけい","あかけ"] },
+  { romaji:"sushi", kana:"すし", distractors:["すじ","そし","しす"] },
+  { romaji:"ishi", kana:"いし", distractors:["あし","うし","いじ"] },
+  { romaji:"eizo", kana:"えいぞ", distractors:["えぞ","えいそ","えいず"] },
+  { romaji:"seiji", kana:"せいじ", distractors:["せじ","せじい","しじ"] },
+  { romaji:"keizai", kana:"けいざい", distractors:["けざい","けいさい","けいざ"] },
+  { romaji:"kaze", kana:"かぜ", distractors:["かせ","がせ","がぜ"] },
+  { romaji:"gaikoku", kana:"がいこく", distractors:["かいこく","がいかく","がいく"] },
+  { romaji:"jiki", kana:"じき", distractors:["しき","じぎ","じけ"] },
+  { romaji:"chiisai", kana:"ちいさい", distractors:["ちさい","ちいせい","ちさ"] },
+  { romaji:"kazu", kana:"かず", distractors:["かす","かつ","かじ"] },
+  { romaji:"okashii", kana:"おかしい", distractors:["あかしい","おかし","おかせい"] },
+  { romaji:"oto", kana:"おと", distractors:["おど","おとー","おとん"] },
+  { romaji:"otoko", kana:"おとこ", distractors:["おとき","おとご","おとこー"] },
+  { romaji:"onna", kana:"おんな", distractors:["おな","おんあ","おんな"] },
+  { romaji:"oni", kana:"おに", distractors:["おね","おにー","おの"] },
+ { romaji:"inu", kana:"いぬ", distractors:["いぬう","いにゅ","いぬえ"], meaning:"dog" },
+  { romaji:"umai", kana:"うまい", distractors:["うまえ","うまいー","うみい"], meaning:"tasty" },
+  { romaji:"en", kana:"えん", distractors:["えんん","えね","えーん"], meaning:"yen" },
+  { romaji:"usagi", kana:"うさぎ", distractors:["うさぎー","うさぎょ","うざぎ"], meaning:"rabbit" },
+  { romaji:"otona", kana:"おとな", distractors:["おとあな","おとなー","おとにゃ"], meaning:"adult" },
+  { romaji:"akai", kana:"あかい", distractors:["あかいー","あかえ","あがい"], meaning:"red" },
+  { romaji:"kaigai", kana:"かいがい", distractors:["かいがえ","かいがー","かいがいー"], meaning:"abroad" },
+  { romaji:"urusai", kana:"うるさい", distractors:["うるさーい","うるさえ","うるさき"], meaning:"noisy" },
+  { romaji:"okane", kana:"おかね", distractors:["おかねー","おかねえ","おかめ"], meaning:"money" },
+  { romaji:"ōki", kana:"おおき", distractors:["おおきー","おおぎ","おおきえ"], meaning:"big" },
+  { romaji:"umi", kana:"うみ", distractors:["うみー","うみえ","うみい"], meaning:"sea" },
+  { romaji:"tsukue", kana:"つくえ", distractors:["つくえー","つくええ","つくけ"], meaning:"table" },
+  { romaji:"oku", kana:"おく", distractors:["おぐ","おけ","おこ"] },
+  { romaji:"konnan", kana:"こんなん", distractors:["こんな","こんなー","こんにん"] },
+  { romaji:"kai", kana:"かい", distractors:["かいー","かえ","かき"] },
+  { romaji:"kao", kana:"かお", distractors:["かう","かおー","かおき"] },
+  { romaji:"kagi", kana:"かぎ", distractors:["かぎー","かき","かぎん"] },
+  { romaji:"kaki", kana:"かき", distractors:["かきー","かく","かきん"] },
+  { romaji:"kako", kana:"かこ", distractors:["かご","かこー","かこき"] },
+  { romaji:"kaku", kana:"かく", distractors:["かき","かくー","かくん"] },
+  { romaji:"kaze", kana:"かぜ", distractors:["かせ","かぜー","かず"] },
+  { romaji:"kata", kana:"かた", distractors:["かたー","かだ","かたん"] },
+
+  { romaji:"katachi", kana:"かたち", distractors:["かたちー","かたき","かだち"] },
+  { romaji:"katsu", kana:"かつ", distractors:["かつー","かつき","かづ"] },
+  { romaji:"gakki", kana:"がっき", distractors:["がっきー","がき","がっく"] },
+  { romaji:"kado", kana:"かど", distractors:["かどー","かどき","かどう"] },
+  { romaji:"kazoku", kana:"かぞく", distractors:["かぞくー","かぞき","かぞくん"] },
+  { romaji:"gai", kana:"がい", distractors:["がいー","がき","がえ"] },
+  { romaji:"gaku", kana:"がく", distractors:["がくー","がき","がこ"] },
+  { romaji:"gake", kana:"がけ", distractors:["がけー","がき","がこ"] },
+  { romaji:"gakusei", kana:"がくせい", distractors:["がくせ","がくさい","がくせん"] },
+  { romaji:"gaikoku", kana:"がいこく", distractors:["がいこくー","がいこき","がいこ"] },
+
+  { romaji:"kiku", kana:"きく", distractors:["きこ","きくー","きけ"] },
+  { romaji:"kisetsu", kana:"きせつ", distractors:["きせつー","きせつき","きせ"] },
+  { romaji:"kutsu", kana:"くつ", distractors:["くつー","くつき","くつん"] },
+  { romaji:"kuse", kana:"くせ", distractors:["くせー","くさ","くせき"] },
+  { romaji:"kuni", kana:"くに", distractors:["くね","くにー","くにん"] },
+  { romaji:"kei", kana:"けい", distractors:["けき","けえ","けいー"] },
+  { romaji:"ken", kana:"けん", distractors:["けんー","けい","けんき"] },
+  { romaji:"koi", kana:"こい", distractors:["こえ","こう","こいー"] },
+  { romaji:"koe", kana:"こえ", distractors:["こえー","こお","こう"] },
+  { romaji:"kokoro", kana:"こころ", distractors:["こころー","こころき","こころん"] },
+
+  { romaji:"koku", kana:"こく", distractors:["こくー","こくき","ここく"] },
+  { romaji:"kokusai", kana:"こくさい", distractors:["こくさいー","こくさき","こくさ"] },
+  { romaji:"goku", kana:"ごく", distractors:["ごくー","ごき","ごくん"] },
+  { romaji:"koto", kana:"こと", distractors:["ことー","ことき","ことん"] },
+  { romaji:"konzatsu", kana:"こんざつ", distractors:["こんざつー","こんざき","こんざっつ"] },
+
+  { romaji:"san", kana:"さん", distractors:["さn","さー","さんー"] },
+  { romaji:"sake", kana:"さけ", distractors:["さけー","さき","さけん"] },
+  { romaji:"saku", kana:"さく", distractors:["さくー","さき","さくん"] },
+  { romaji:"sato", kana:"さと", distractors:["さとー","さど","さとん"] },
+  { romaji:"sakana", kana:"さかな", distractors:["さかなー","さかな","さかに"] },
+
+  { romaji:"sagasu", kana:"さがす", distractors:["さがすー","さかす","さがつ"] },
+  { romaji:"samui", kana:"さむい", distractors:["さむー","さむえ","さもい"] },
+  { romaji:"satsu", kana:"さつ", distractors:["さつー","さっつ","さつき"] },
+  { romaji:"zasshi", kana:"ざっし", distractors:["ざし","ざっしー","ざっす"] },
+  { romaji:"shita", kana:"した", distractors:["しだ","したー","しな"] },
+  { romaji:"shigoto", kana:"しごと", distractors:["しごとー","しご","しごっ"] },
+  { romaji:"shizuka", kana:"しずか", distractors:["しずかー","しずき","しずけ"] },
+  { romaji:"shitsu", kana:"しつ", distractors:["しつー","しっつ","しつき"] },
+  { romaji:"shitsumon", kana:"しつもん", distractors:["しつもんー","しつも","しつもき"] },
+
+  { romaji:"suugaku", kana:"すうがく", distractors:["すうがくー","すうかく","すうがき"] },
+  { romaji:"suki", kana:"すき", distractors:["すきー","すきき","すくい"] },
+  { romaji:"seki", kana:"せき", distractors:["せきー","せぎ","せきん"] },
+  { romaji:"sekai", kana:"せかい", distractors:["せかいー","せかえ","せかき"] },
+  { romaji:"setsu", kana:"せつ", distractors:["せつー","せっつ","せつき"] },
+  { romaji:"soto", kana:"そと", distractors:["そとー","そど","そとき"] },
+
+  { romaji:"asoko", kana:"あそこ", distractors:["あそこー","あさこ","あそこ"] },
+  { romaji:"zoku", kana:"ぞく", distractors:["ぞくー","ぞき","ぞこ"] },
+  { romaji:"tai", kana:"たい", distractors:["たいー","たえ","たいき"] },
+  { romaji:"taosu", kana:"たおす", distractors:["たおすー","たおき","たおつ"] },
+  { romaji:"taku", kana:"たく", distractors:["たくー","たき","たくん"] },
+
+  { romaji:"tachi", kana:"たち", distractors:["たちー","たちき","たつ"] },
+  { romaji:"tate", kana:"たて", distractors:["たてー","たで","たてき"] },
+  { romaji:"tanoshii", kana:"たのしい", distractors:["たのしー","たのしき","たのしえ"] },
+  { romaji:"tadashii", kana:"ただしい", distractors:["ただしー","ただしき","ただしえ"] },
+  { romaji:"tane", kana:"たね", distractors:["たねー","たねき","たねん"] },
+  { romaji:"daigaku", kana:"だいがく", distractors:["だいがくー","だいがき","だいがっく"] },
+  { romaji:"daikon", kana:"だいこん", distractors:["だいこんー","だいこ","だいこんき"] },
+  { romaji:"danna", kana:"だんな", distractors:["だな","だんあ","だんなー"] },
+  { romaji:"nan", kana:"なん", distractors:["なんー","なに","なにん"] },
+  { romaji:"ningen", kana:"にんげん", distractors:["にんげんー","にんけん","にんげ"] },
+  { romaji:"chūi", kana:"ちゅうい", distractors:["ちゅい","ちゅっい","ちゅいい"] },
+
+  { romaji:"kyūkē", kana:"きゅうけい", distractors:["きゅけい","きゅっけい","きゅけえ"] },
+
+  { romaji:"shīn", kana:"しいん", distractors:["しん","しっん","しんい"] },
+
+  { romaji:"īe", kana:"いいえ", distractors:["いえ","いっえ","いええ"] },
+
+{ romaji:"kiyō", kana:"きよう", distractors:["きよ","きいよ","きよお"] },
+  
+  { romaji:"suiē", kana:"すいえい", distractors:["すいえ","すえい","すいっえ"] },
+  
+  { romaji:"jiyū", kana:"じゆう", distractors:["じゆ","じゆお","しゆ"] },
+
+  { romaji:"sēto", kana:"せいと", distractors:["せと","せえと","せっと"] },
+
+{ romaji:"yōka", kana:"ようか", distractors:["よか","よっか","よかあ"] },  
+  
+{ romaji:"kyōkai", kana:"きょうかい", distractors:["きょかい","きゅうかい","きょうがい"] }, 
+  
+{ romaji:"henkō", kana:"へんこう", distractors:["へんこ","へんっこ","べんこお"] },
+  
+  { romaji:"yokka", kana:"よっか", distractors:["よか","ようか","ようっか"] },
+  
+ { romaji:"yakuba", kana:"やくば", distractors:["やくは","やぐば","やくぱ"] },
+  { romaji:"yowai", kana:"よわい", distractors:["よばい","よない","よあい"] },
+  { romaji:"yoshi", kana:"よし", distractors:["よじ","よに","よひ"] },
+  { romaji:"yoru", kana:"よる", distractors:["よね","よろ","よむ"] },
+  { romaji:"yukiami", kana:"ゆきあみ", distractors:["ゆぎあみ","ゆきなみ","ゆきあめ"] },
+  { romaji:"yurui", kana:"ゆるい", distractors:["ゆらい","ゆろい","ゆるえ"] },
+  { romaji:"yubiwa", kana:"ゆびわ", distractors:["ゆびば","ゆびは","ゆびな"] },
+  { romaji:"yumeji", kana:"ゆめじ", distractors:["ゆめち","ゆめし","ゆめに"] },
+  { romaji:"yokan", kana:"よかん", distractors:["よがん","よか","よこん"] },
+
+  { romaji:"yasaishitsu", kana:"やさいしつ", distractors:["やさししつ","やざいしつ","やさいしち"] },
+  { romaji:"yakuin", kana:"やくいん", distractors:["やくにん","やぐいん","やくえん"] },
+  { romaji:"yakimochi", kana:"やきもち", distractors:["やきもぢ","やぎもち","やきもに"] },
+  { romaji:"yakusha", kana:"やくしゃ", distractors:["やくじゃ","やぐしゃ","やくさ"] },
+
+  { romaji:"yamabiko", kana:"やまびこ", distractors:["やまひこ","やまびご","やまびき"] },
+  { romaji:"yamaji", kana:"やまじ", distractors:["やまち","やまし","やまに"] },
+
+  { romaji:"yaneura", kana:"やねうら", distractors:["やねえら","やねおら","やぬうら"] },
+  { romaji:"yasashisa", kana:"やさしさ", distractors:["やさしざ","やざしさ","やさした"] },
+  { romaji:"yasuragi", kana:"やすらぎ", distractors:["やずらぎ","やすらき","やすなぎ"] },
+
+  { romaji:"yutori", kana:"ゆとり", distractors:["ゆどり","ゆとに","ゆとれ"] },
+  { romaji:"yuwaku", kana:"ゆわく", distractors:["ゆばく","ゆらく","ゆなく"] },
+
+  { romaji:"yomigaeru", kana:"よみがえる", distractors:["よみかえる","よみがえろ","よみがえた"] },
+  { romaji:"yobikakeru", kana:"よびかける", distractors:["よびかげる","よびかねる","よびかせる"] },
+
+  { romaji:"yorokobi", kana:"よろこび", distractors:["よろごび","よろこみ","よろこひ"] },
+  { romaji:"yorimichi", kana:"よりみち", distractors:["よりみし","よりみじ","よりみき"] },
+
+  { romaji:"yukioke", kana:"ゆきおけ", distractors:["ゆきおげ","ゆきうけ","ゆきおこ"] },
+  { romaji:"yukidoke", kana:"ゆきどけ", distractors:["ゆきとけ","ゆぎどけ","ゆきどげ"] },
+  { romaji:"yadoya", kana:"やどや", distractors:["やとや","やのや","やどよ"] },
+  { romaji:"yabureru", kana:"やぶれる", distractors:["やぶねる","やぶれるー","やぶれろ"] },
+  { romaji:"yakeru", kana:"やける", distractors:["やげる","やけす","やけた"] },
+  { romaji:"hikui", kana:"ひくい", distractors:["ひく","ひろい","ひかい"] },
+  { romaji:"hiku", kana:"ひく", distractors:["ひくい","ひらく","ひこ"] },
+  { romaji:"hito", kana:"ひと", distractors:["ひつ","ひこ","ひど"] },
+  { romaji:"hitotsu", kana:"ひとつ", distractors:["ひと","ひとり","ひつ"] },
+  { romaji:"hinshitsu", kana:"ひんしつ", distractors:["ひんじつ","びんしつ","ひんし"] },
+
+  /* は-row */
+  { romaji:"haha", kana:"はは", distractors:["はな","はば","はほ"] },
+  { romaji:"hana_flower", kana:"はな", distractors:["はは","はね","はなす"] },
+  { romaji:"hana_nose", kana:"はな", distractors:["はなす","はね","はは"] },
+  { romaji:"hanasu", kana:"はなす", distractors:["はなし","はな","はなさ"] },
+  { romaji:"hanashibanashi", kana:"はなしばなし", distractors:["はなす","はなし","はなばなし"] },
+  { romaji:"haiku", kana:"はいく", distractors:["はく","はいう","はいこ"] },
+  { romaji:"hatake", kana:"はたけ", distractors:["はたか","はたき","はたこ"] },
+  { romaji:"hanabi", kana:"はなび", distractors:["はなひ","はなびー","はなふ"] },
+  { romaji:"hashi", kana:"はし", distractors:["はしー","はじ","はち"] },
+
+  /* へ-row */
+  { romaji:"heikin", kana:"へいきん", distractors:["へきん","へいこん","へいぎん"] },
+  { romaji:"henka", kana:"へんか", distractors:["へんが","へんた","へんだ"] },
+  { romaji:"henna", kana:"へんな", distractors:["へんら","へんだ","へんば"] },
+
+  /* ふ-row */
+  { romaji:"fukai", kana:"ふかい", distractors:["ふか","ふがい","ふけい"] },
+  { romaji:"fuan", kana:"ふあん", distractors:["ふなん","ふわん","ふばん"] },
+  { romaji:"futoi", kana:"ふとい", distractors:["ふと","ふどう","ふたい"] },
+  { romaji:"futon", kana:"ふとん", distractors:["ふどう","ふと","ふほん"] },
+  { romaji:"fudan", kana:"ふだん", distractors:["ふたん","ふばん","ふなん"] },
+  { romaji:"fusai", kana:"ふさい", distractors:["ふざい","ふさいー","ふざいー"] },
+  { romaji:"fuku", kana:"ふく", distractors:["ふぐ","ふう","ふこ"] },
+  { romaji:"fune", kana:"ふね", distractors:["ふめ","ふて","ふへ"] },
+  { romaji:"fujisan", kana:"ふじさん", distractors:["ふじさ","ふじさー","ふじさん"] },
+
+  /* ば-row */
+  { romaji:"bakufu", kana:"ばくふ", distractors:["はくふ","ぱくふ","ばくぶ"] },
+  { romaji:"buta", kana:"ぶた", distractors:["ふた","ぷた","ぶだ"] },
+  { romaji:"bubun", kana:"ぶぶん", distractors:["ふぶん","ぶぷん","ぶぶ"] },
+  { romaji:"bushi", kana:"ぶし", distractors:["ふし","ぶじ","ぶち"] },
+  { romaji:"baka", kana:"ばか", distractors:["ぱか","はか","ばが"] },
+  { romaji:"banchi", kana:"ばんち", distractors:["ぱんち","はんち","ばんじ"] },
+  { romaji:"baiku", kana:"ばいく", distractors:["ぱいく","はいく","ばいぐ"] },
+  { romaji:"banana", kana:"ばなな", distractors:["ぱなな","はなな","ばな"] },
+  { romaji:"boku", kana:"ぼく", distractors:["ほく","ぼぐ","ぽく"] },
+  { romaji:"botan", kana:"ぼたん", distractors:["ほたん","ぼだん","ぼた"] },
+  { romaji:"bonsai", kana:"ぼんさい", distractors:["ほんさい","ぼんざい","ぼんさいー"] },
+
+  /* ぱ-row */
+  { romaji:"pan", kana:"ぱん", distractors:["はん","ばん","ぱんー"] },
+  { romaji:"pinku", kana:"ぴんく", distractors:["びんく","ひんく","ぴんぐ"] },
+  { romaji:"pocket", kana:"ぽけっと", distractors:["ぼけっと","ほけっと","ぽげっと"] },
+  { romaji:"poko_poko", kana:"ぽこぽこ", distractors:["ぼこぼこ","ほこほこ","ぽこぼこ"] },
+
+  /* ほ / ぼ-row */
+  { romaji:"hoshii", kana:"ほしい", distractors:["ほし","ぼしい","ほじい"] },
+  { romaji:"hosoi", kana:"ほそい", distractors:["ほぞい","ほそ","ほたい"] },
+  { romaji:"honki", kana:"ほんき", distractors:["ぼんき","ほんぎ","ほんち"] },
+  { romaji:"hotondo", kana:"ほとんど", distractors:["ほとんと","ぼとんど","ほどんど"] },
+  { romaji:"hotchkisu", kana:"ほっちきす", distractors:["ほちきす","ぼっちきす","ほっちぎす"] },
+
+  /* Others / reinforcement */
+  { romaji:"obasan", kana:"おばさん", distractors:["おばあさん","おば","おばさ"] },
+  { romaji:"obaasan", kana:"おばあさん", distractors:["おばさん","おば","おばあ"] },
+  { romaji:"bin", kana:"びん", distractors:["ひん","ぴん","びぬ"] },
+  { romaji:"obi", kana:"おび", distractors:["おひ","おびー","おびん"] },
+  { romaji:"bungaku", kana:"ぶんがく", distractors:["ふんがく","ぶんかく","ぶんが"] },
+  { romaji:"bunseki", kana:"ぶんせき", distractors:["ふんせき","ぶんぜき","ぶんしき"] },
+  { romaji:"bunka", kana:"ぶんか", distractors:["ふんか","ぶんが","ぶんた"] },
+  { romaji:"buin", kana:"ぶいん", distractors:["ふいん","ぶん","ぶい"] },
+  { romaji:"bengoshi", kana:"べんごし", distractors:["へんごし","べんこし","べんぞし"] },
+  { romaji:"beikoku", kana:"べいこく", distractors:["へいこく","べいごく","べいこ"] },
+  { romaji:"betsubetsu", kana:"べつべつ", distractors:["へつへつ","べつべち","べつべ"] },
+  { romaji:"beki", kana:"べき", distractors:["へき","ぺき","べぎ"] },
+  { romaji:"kabe", kana:"かべ", distractors:["かへ","かぺ","かめ"] },
+  { romaji:"besshi", kana:"べっし", distractors:["へっし","べっち","べし"] },
+  { romaji:"yamaguchi", kana:"やまぐち", distractors:["やまくち","やまごち","やまぐじ"] },
+  { romaji:"yomigaeru", kana:"よみがえる", distractors:["よみかえる","よみがえす","よみがえり"] },
+  { romaji:"yuruyaka", kana:"ゆるやか", distractors:["ゆるやこ","ゆるよか","ゆるやが"] },
+  { romaji:"yowai", kana:"よわい", distractors:["よばい","よない","よらい"] },
+  { romaji:"yutori", kana:"ゆとり", distractors:["ゆどり","ゆとに","ゆとれ"] },
+  { romaji:"yukidaruma", kana:"ゆきだるま", distractors:["ゆきだるみ","ゆぎだるま","ゆきたるま"] },
+  { romaji:"yamakawa", kana:"やまかわ", distractors:["やまがわ","やまかわー","やまかわえ"] },
+  { romaji:"yubiwa", kana:"ゆびわ", distractors:["ゆびば","ゆびは","ゆびら"] },
+  { romaji:"yogore", kana:"よごれ", distractors:["よこれ","よごね","よごら"] },
+  { romaji:"yowamushi", kana:"よわむし", distractors:["よわむち","よばむし","よわむひ"] },
+  { romaji:"yurusu", kana:"ゆるす", distractors:["ゆるし","ゆるせ","ゆるそ"] },
+  
+  { romaji:"kēkaku", kana:"けいかく", distractors:["けかく","けえかく","けっかく"] },
+
+  { romaji:"tēnē", kana:"ていねい", distractors:["てねい","てえねい","ていねえ"] },
+
+  { romaji:"hōhō", kana:"ほうほう", distractors:["ほほう","ほっほう","ほうほ"] },
+  
+   { romaji:"kūkō", kana:"くうこう", distractors:["くうこ","くこ","くこう"] },
+
+  { romaji:"hōkoku", kana:"ほうこく", distractors:["ほこく","ほっこく","ほうこ"] },
+
+  { romaji:"iji", kana:"いじ", distractors:["いっじ","じい","いじい"] }
+
+];
+
+/* ========= GAME SETUP ========= */
+const TOTAL_PER_GAME = 50;
+
+function shuffle(arr) {
+  return arr.sort(() => Math.random() - 0.5);
+}
+
+// pick random 25 questions
+const questions = shuffle([...ALL_QUESTIONS]).slice(0, TOTAL_PER_GAME);
+
+let currentIndex = 0;
+let score = 0;
+
+/* ========= DOM ========= */
+const romajiEl = document.getElementById("romaji");
+const optionsEl = document.getElementById("options");
+const messageEl = document.getElementById("message");
+const motivationEl = document.getElementById("motivation");
+const nextBtn = document.getElementById("next");
+const counterEl = document.getElementById("counter");
+const gifBox = document.getElementById("gif-box");
+
+/* ========= GAME LOGIC ========= */
+function showQuestion() {
+  const q = questions[currentIndex];
+
+  counterEl.textContent = `Question ${currentIndex + 1} / ${questions.length}`;
+  romajiEl.textContent = q.romaji;
+  messageEl.textContent = "";
+  nextBtn.style.display = "none";
+  gifBox.innerHTML = "";
+
+  const options = shuffle([q.kana, ...q.distractors]);
+  optionsEl.innerHTML = "";
+
+  options.forEach(opt => {
+    const btn = document.createElement("button");
+    btn.className = "option";
+    btn.textContent = opt;
+    btn.onclick = () => checkAnswer(opt);
+    optionsEl.appendChild(btn);
+  });
+}
+
+function checkAnswer(choice) {
+  const correct = questions[currentIndex].kana;
+
+  if (choice === correct) {
+    messageEl.textContent = "✅ Correct!";
+    messageEl.style.color = "#2e7d32";
+    score++;
+  } else {
+    messageEl.textContent = `❌ Correct answer: ${correct}`;
+    messageEl.style.color = "#b23b3b";
+  }
+
+  nextBtn.style.display = "inline-block";
+  document.querySelectorAll(".option").forEach(b => b.disabled = true);
+}
+
+function nextQuestion() {
+  currentIndex++;
+  currentIndex < questions.length ? showQuestion() : finishGame();
+}
+
+function finishGame() {
+  romajiEl.textContent = "🎉 Finished!";
+  counterEl.textContent = "";
+  optionsEl.innerHTML = "";
+
+ let motivationText = "";
+  let gif = "";
+
+  if (score >= 41) {
+    motivationText = "🌟 Well done! You are spelling & pronunciation master!";
+    gif = "https://raw.githubusercontent.com/k58835032-notbot/lesson-9-morae/main/cool%20cute%20cat.gif";
+  } else if (score >= 21) {
+    motivationText = "👍 You're getting there! Keep practicing!";
+    gif = "https://raw.githubusercontent.com/k58835032-notbot/lesson-9-morae/main/cute%20cat%20walking.gif";
+  } else {
+    motivationText = "🌱 Keep practicing — every try matters!";
+    gif = "https://raw.githubusercontent.com/k58835032-notbot/lesson-9-morae/main/sad%20cute%20cat.gif";
+  }
+
+  messageEl.innerHTML = `Score: ${score} / ${questions.length}`;
+  motivationEl.textContent = motivationText;
+  gifBox.innerHTML = `<img src="${gif}" alt="cat gif">`;
+}
+
+showQuestion();
+</script>
+
+</body>
+</html>
