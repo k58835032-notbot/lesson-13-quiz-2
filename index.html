@@ -68,7 +68,7 @@
 
 <body>
 
-<h1>Pronunciation ↔ Hiragana</h1>
+<h1>Pronunciation → Hiragana</h1>
 <div id="counter"></div>
 
 <div id="game-box">
@@ -77,7 +77,8 @@
   <div id="message"></div>
   <div id="motivation"></div>
   <div id="gif-box"></div>
-  <button id="next" onclick="nextQuestion()">Next</button>
+<button id="next">Next</button>
+
 </div>
 
 
@@ -578,7 +579,6 @@ const ALL_QUESTIONS = [
   { romaji:"iji", kana:"いじ", distractors:["いっじ","じい","いじい"] }
 
 ];
-
 /* ========= GAME SETUP ========= */
 const TOTAL_PER_GAME = 50;
 
@@ -586,8 +586,8 @@ function shuffle(arr) {
   return arr.sort(() => Math.random() - 0.5);
 }
 
-// pick random 25 questions
-const questions = shuffle([...ALL_QUESTIONS]).slice(0, TOTAL_PER_GAME);
+// pick random questions for this game
+let questions = shuffle([...ALL_QUESTIONS]).slice(0, TOTAL_PER_GAME);
 
 let currentIndex = 0;
 let score = 0;
@@ -600,6 +600,7 @@ const motivationEl = document.getElementById("motivation");
 const nextBtn = document.getElementById("next");
 const counterEl = document.getElementById("counter");
 const gifBox = document.getElementById("gif-box");
+nextBtn.onclick = nextQuestion;
 
 /* ========= GAME LOGIC ========= */
 function showQuestion() {
@@ -608,6 +609,7 @@ function showQuestion() {
   counterEl.textContent = `Question ${currentIndex + 1} / ${questions.length}`;
   romajiEl.textContent = q.romaji;
   messageEl.textContent = "";
+  motivationEl.textContent = "";
   nextBtn.style.display = "none";
   gifBox.innerHTML = "";
 
@@ -635,27 +637,34 @@ function checkAnswer(choice) {
     messageEl.style.color = "#b23b3b";
   }
 
-  nextBtn.style.display = "inline-block";
   document.querySelectorAll(".option").forEach(b => b.disabled = true);
+  nextBtn.style.display = "inline-block";
 }
 
 function nextQuestion() {
   currentIndex++;
-  currentIndex < questions.length ? showQuestion() : finishGame();
+
+  if (currentIndex >= questions.length) {
+    finishGame();
+    return;
+  }
+
+  showQuestion();
 }
 
+/* ========= FINISH ========= */
 function finishGame() {
-  romajiEl.textContent = "🎉 Finished!";
+  romajiEl.textContent = "🎉 You did it!";
   counterEl.textContent = "";
   optionsEl.innerHTML = "";
 
- let motivationText = "";
+  let motivationText = "";
   let gif = "";
 
   if (score >= 41) {
-    motivationText = "🌟 Well done! You are spelling & pronunciation master!";
+    motivationText = "🌟 Well done! You are a spelling & pronunciation master!";
     gif = "https://raw.githubusercontent.com/k58835032-notbot/lesson-9-morae/main/cool%20cute%20cat.gif";
-  } else if (score >= 21) {
+  } else if (score >= 25) {
     motivationText = "👍 You're getting there! Keep practicing!";
     gif = "https://raw.githubusercontent.com/k58835032-notbot/lesson-9-morae/main/cute%20cat%20walking.gif";
   } else {
@@ -666,10 +675,39 @@ function finishGame() {
   messageEl.innerHTML = `Score: ${score} / ${questions.length}`;
   motivationEl.textContent = motivationText;
   gifBox.innerHTML = `<img src="${gif}" alt="cat gif">`;
+
+  nextBtn.textContent = "Retry";
+  nextBtn.style.display = "inline-block";
+  nextBtn.onclick = restartGame;
 }
 
-showQuestion();
-</script>
+/* ========= RETRY ========= */
+function restartGame() {
+  score = 0;
+  currentIndex = 0;
 
-</body>
+  // reshuffle new 50 questions
+  questions = shuffle([...ALL_QUESTIONS]).slice(0, TOTAL_PER_GAME);
+
+  // reset UI
+  optionsEl.innerHTML = "";
+  optionsEl.style.display = "block";
+  gifBox.innerHTML = "";
+  messageEl.textContent = "";
+  motivationEl.textContent = "";
+  counterEl.textContent = "";
+
+  nextBtn.textContent = "Next";
+  nextBtn.style.display = "none";
+  nextBtn.onclick = nextQuestion;
+
+  showQuestion();
+}
+
+
+/* ========= START ========= */
+showQuestion();
+
+  </script>
+  </body>
 </html>
